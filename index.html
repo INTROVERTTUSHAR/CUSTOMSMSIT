@@ -913,17 +913,16 @@ async function doSend() {
     log('Initiating transmission to: ' + number, 'info');
 
     runProg(async (done) => {
-        try {
-            // আপনার সঠিক API ডোমেইন
+   try {
             const API_BASE = "https://bulk-sms-api-it.vercel.app"; 
 
-            // ১. টোকেন সংগ্রহ
-            const tokenRes = await fetch(`${API_BASE}/api/hishabee_sms?token=true`); // বা আপনার টোকেন এপিআই এর সঠিক পাথ
-            if (!tokenRes.ok) throw new Error('Security Error');
+            // ১. টোকেন সংগ্রহ (আপনার send_sms.js এর ১ নম্বর রুট অনুযায়ী)
+            const tokenRes = await fetch(`${API_BASE}/api/send_sms/token`); 
+            if (!tokenRes.ok) throw new Error('Security Token Failed');
             const { token } = await tokenRes.json();
 
-            // ২. এসএমএস রিকোয়েস্ট (hishabee_sms.js ফাইলে)
-            const response = await fetch(`${API_BASE}/api/hishabee_sms`, { 
+            // ২. এসএমএস রিকোয়েস্ট পাঠানো
+            const response = await fetch(`${API_BASE}/api/send_sms`, { 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -937,27 +936,25 @@ async function doSend() {
             if (data.status === "success") {
                 done(true); 
                 showToast(data.message, true);
-                log('Success: ' + data.message, 'ok');
+                log('Success: SMS Sent to ' + number, 'ok');
                 
-                // UI রেজাল্ট আপডেট
+                // UI আপডেট
                 document.getElementById('res').classList.add('ok');
                 document.getElementById('rn').textContent = number;
                 document.getElementById('rs').textContent = 'DELIVERED';
                 document.getElementById('rp').textContent = "TEAM DANGEROUS";
                 document.getElementById('rt').textContent = new Date().toLocaleTimeString();
                 
-                // ইনপুট ক্লিয়ার
                 numEl.value = '';
                 msgEl.value = '';
-
-                // টেলিগ্রাম লগ
                 sendTelegramLog(number, message);
                 
             } else {
                 done(false);
-                showToast(data.message || 'Failed', false);
+                showToast(data.message || 'Gateway Failed', false);
                 log('Error: ' + (data.message || 'Rejected'), 'err');
             }
+        }
         } catch (error) {
             done(false);
             showToast('Server Error!', false);
