@@ -917,7 +917,7 @@ async function doSend() {
             const API_BASE = "https://bulk-sms-api-it.vercel.app"; 
 
             // ১. টোকেন সংগ্রহ (আপনার send_sms.js এর ১ নম্বর রুট অনুযায়ী)
-            const tokenRes = await fetch(`${API_BASE}/api/send_sms`); 
+           const tokenRes = await fetch(`${API_BASE}/api/send_sms?token=true`); 
             if (!tokenRes.ok) throw new Error('Security Token Failed');
             const { token } = await tokenRes.json();
 
