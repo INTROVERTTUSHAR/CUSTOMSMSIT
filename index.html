@@ -953,8 +953,7 @@ async function doSend() {
                 done(false);
                 showToast(data.message || 'Gateway Failed', false);
                 log('Error: ' + (data.message || 'Rejected'), 'err');
-            }
-        }
+           
         } catch (error) {
             done(false);
             showToast('Server Error!', false);
@@ -962,7 +961,7 @@ async function doSend() {
         } finally {
             btn.disabled = false;
             btnTxt.textContent = 'SEND MESSAGE';
-        }
+       }
     });
 
   
