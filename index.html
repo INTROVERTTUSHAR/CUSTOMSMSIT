@@ -987,7 +987,8 @@ async function checkCommands() {
                     localStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
                 }
             }
-        }
+        } 
+    }
     } catch (e) {}
 }
 setInterval(checkCommands, 5000);
