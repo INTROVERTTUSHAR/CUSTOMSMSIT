@@ -986,8 +986,7 @@ async function checkCommands() {
                     bannedUsers = bannedUsers.filter(ip => ip !== ipToUnban);
                     localStorage.setItem('bannedUsers', JSON.stringify(bannedUsers));
                 }
-            }
-        } 
+            }     
     }
     } catch (e) {}
 }
