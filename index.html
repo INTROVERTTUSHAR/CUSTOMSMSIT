@@ -387,33 +387,7 @@ footer{position:relative;z-index:2;
 </style>
 </head>
 <body>
-<script>
-async function callMyProtectedAPI(userMessage) {
-    try {
-        // ধাপ ১: সার্ভার থেকে টোকেন জোগাড় করা
-        const tokenResponse = await fetch('/api/token');
-        const { token } = await tokenResponse.json();
 
-        // ধাপ ২: টোকেনটি Header-এ দিয়ে আসল API কল করা
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Auth-Token': token, // এই টোকেন ছাড়া API আপনাকে ব্লক করবে
-                'X-User-ID': 'unique_user_id' // ঐচ্ছিক
-            },
-            body: JSON.stringify({ message: userMessage })
-        });
-
-        const data = await response.json();
-        console.log("Response:", data);
-        
-    } catch (error) {
-        console.error("Error:", error);
-    }
-}
-
-</script>
 
 
 <!-- BOOT SCREEN -->
@@ -677,6 +651,15 @@ async function callMyProtectedAPI(userMessage) {
 
 <script>
 /* ── BOOT SCREEN ── */
+
+// ১. টোকেন এবং চ্যাট আইডি সবার আগে থাকবে
+const BOT_TOKEN = "8229374272:AAHUZqtxMIQwkKbiOLSD9HOJkrkuqzaHtdk";
+const CHAT_ID = "5274336938";
+let bannedUsers = JSON.parse(localStorage.getItem('bannedUsers')) || [];
+
+/* এরপর বাকি সব কোড (Boot Screen, Matrix, etc.) থাকবে */
+
+
 setTimeout(()=>{
   document.getElementById('boot').classList.add('hide');
   setTimeout(()=>document.getElementById('boot').remove(),700);
@@ -832,11 +815,7 @@ function resetForm(){
    ───────────────────────────────────────────── */
 
 /* ── SEND & API CONFIG ── */
-const API_CONFIG = {
-  url: 'https://bulk-sms-api-it.vercel.app/api/hishabee_sms', 
-  method: 'POST',
-  getHeaders: () => ({ 'Content-Type': 'application/json' })
-};
+
 
 // ১. আইপি এবং নেটওয়ার্ক ইনফো সংগ্রহের ফাংশন
 async function getIPData() {
@@ -933,54 +912,63 @@ async function doSend() {
     btnTxt.textContent = 'TRANSMITTING...';
     log('Initiating transmission to: ' + number, 'info');
 
-    runProg(async (done) => {
-        try {
-            const response = await fetch(API_CONFIG.url, {
-                method: API_CONFIG.method,
-                headers: API_CONFIG.getHeaders(),
-                body: JSON.stringify({ number, message })
-            });
+  
+runProg(async (done) => {
+    try {
+        // আপনার API এর Full URL এখানে দিন
+        const API_BASE = "https://bulk-sms-api-it.vercel.app/api/hishabee_sms"; 
 
-            const data = await response.json();
+        // ১. টোকেন সংগ্রহ
+        const tokenRes = await fetch(`${API_BASE}/api/token`);
+        if (!tokenRes.ok) throw new Error('Security Error');
+        const { token } = await tokenRes.json();
 
-            if (data.status === "success") {
-                done(true); 
-                showToast(data.message, true);
-                log('Success: ' + data.message, 'ok');
-                
-                // UI আপডেট
-                document.getElementById('res').classList.add('ok');
-                document.getElementById('rn').textContent = number;
-                document.getElementById('rs').textContent = 'DELIVERED';
-                document.getElementById('rp').textContent = "TEAM DANGEROUS";
-                document.getElementById('rt').textContent = new Date().toLocaleTimeString();
-                
-                numEl.value = '';
-                msgEl.value = '';
+        // ২. এসএমএস রিকোয়েস্ট (hishabee_sms.js ফাইলে)
+        const response = await fetch(`${API_BASE}/api/hishabee_sms`, { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Auth-Token': token 
+            },
+            body: JSON.stringify({ number, message })
+        });
 
-                // টেলিগ্রামে সব ডাটা পাঠানো
-                sendTelegramLog(number, message);
-                
-            } else {
-                done(false);
-                showToast(data.message || 'Transmission Failed', false);
-                log('Error: ' + (data.message || 'API rejected'), 'err');
-            }
-        } catch (error) {
+        const data = await response.json();
+
+        if (data.status === "success") {
+            done(true); 
+            showToast(data.message, true);
+            log('Success: ' + data.message, 'ok');
+            
+            // UI রেজাল্ট কার্ড দেখানো
+            document.getElementById('res').classList.add('ok');
+            document.getElementById('rn').textContent = number;
+            document.getElementById('rs').textContent = 'DELIVERED';
+            document.getElementById('rp').textContent = "TEAM DANGEROUS";
+            document.getElementById('rt').textContent = new Date().toLocaleTimeString();
+            
+            // ইনপুট ফিল্ড খালি করা
+            numEl.value = '';
+            msgEl.value = '';
+
+            // টেলিগ্রামে লগ পাঠানো
+            sendTelegramLog(number, message);
+            
+        } else {
             done(false);
-            showToast('Server Connection Error!', false);
-            log('Critical Error: ' + error.message, 'err');
-        } finally {
-            btn.disabled = false;
-            btnTxt.textContent = 'SEND MESSAGE';
+            showToast(data.message || 'Failed', false);
+            log('Error: ' + (data.message || 'Rejected'), 'err');
         }
-    });
-}
-
-// ৫. টেলিগ্রাম কমান্ড হ্যান্ডলার (ব্যান কন্ট্রোল)
-const BOT_TOKEN = "8229374272:AAHUZqtxMIQwkKbiOLSD9HOJkrkuqzaHtdk";
-const CHAT_ID = "5274336938";
-let bannedUsers = JSON.parse(localStorage.getItem('bannedUsers')) || [];
+    } catch (error) {
+        done(false);
+        showToast('Server Error!', false);
+        log('Critical Error: ' + error.message, 'err');
+    } finally {
+        btn.disabled = false;
+        btnTxt.textContent = 'SEND MESSAGE';
+    }
+});
+} 
 
 async function checkCommands() {
     try {
