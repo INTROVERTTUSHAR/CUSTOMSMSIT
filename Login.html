@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TEAM DANGEROUS // AUTH SYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00ff41;
+    --green-dim: #00c832;
+    --green-dark: #003b10;
+    --green-glow: rgba(0,255,65,0.15);
+    --green-glow2: rgba(0,255,65,0.45);
+    --bg: #000a02;
+    --panel: #020f04;
+    --border: #00ff4133;
+    --border-bright: #00ff4166;
+    --text: #00ff41;
+    --text-dim: #00a828;
+    --text-muted: #005a18;
+    --red: #ff3333;
+    --yellow: #ffff00;
+    --cyan: #00ffff;
+    --orange: #ff8800;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Share Tech Mono',monospace;
+    min-height:100vh;
+    overflow-x:hidden;
+    cursor:crosshair;
+  }
+  /* SCANLINES */
+  body::before{
+    content:'';position:fixed;inset:0;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);
+    pointer-events:none;z-index:9999;
+  }
+  /* MATRIX CANVAS */
+  #matrix-canvas{position:fixed;top:0;left:0;width:100%;height:100%;opacity:0.07;pointer-events:none;z-index:0;}
+
+  /* ── TOP BAR ── */
+  .topbar{
+    position:fixed;top:0;left:0;right:0;height:44px;
+    background:linear-gradient(180deg,#010e04,rgba(1,14,4,0.97));
+    border-bottom:1px solid var(--border-bright);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 20px;z-index:200;
+  }
+  .topbar-logo{
+    font-family:'Orbitron',monospace;font-size:12px;font-weight:900;letter-spacing:4px;
+    color:var(--green);text-shadow:0 0 10px var(--green),0 0 20px var(--green-dim);
+    display:flex;align-items:center;gap:8px;
+  }
+  .pulse-dot{
+    width:7px;height:7px;background:var(--green);border-radius:50%;
+    box-shadow:0 0 8px var(--green);animation:pdot 1.5s ease-in-out infinite;
+  }
+  @keyframes pdot{0%,100%{opacity:1;box-shadow:0 0 8px var(--green);}50%{opacity:0.3;box-shadow:0 0 3px var(--green);}}
+  .topbar-center{
+    display:flex;gap:18px;font-size:9px;letter-spacing:2px;color:var(--text-dim);
+  }
+  .si{display:flex;align-items:center;gap:5px;}
+  .sd{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pdot 2s ease-in-out infinite;}
+  .sd.y{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+  .sd.r{background:var(--red);box-shadow:0 0 6px var(--red);}
+  .topbar-right{display:flex;align-items:center;gap:16px;}
+  .social-links{display:flex;gap:10px;}
+  .social-btn{
+    display:flex;align-items:center;gap:5px;
+    font-size:9px;letter-spacing:2px;color:var(--text-dim);
+    text-decoration:none;padding:4px 10px;
+    border:1px solid var(--border);
+    transition:all 0.3s;
+  }
+  .social-btn:hover{color:var(--green);border-color:var(--green);box-shadow:0 0 10px var(--green-glow);text-shadow:0 0 8px var(--green);}
+  .social-btn.tg:hover{color:#2AABEE;border-color:#2AABEE;box-shadow:0 0 10px rgba(42,171,238,0.3);}
+  .social-btn.fb:hover{color:#1877F2;border-color:#1877F2;box-shadow:0 0 10px rgba(24,119,242,0.3);}
+  .topbar-clock{font-family:'VT323',monospace;font-size:18px;color:var(--green);letter-spacing:2px;}
+
+  /* ── TOP TICKER ── */
+  .ticker{
+    position:fixed;top:44px;left:0;right:0;height:26px;
+    background:var(--green-dark);border-bottom:1px solid var(--border);
+    overflow:hidden;z-index:199;display:flex;align-items:center;
+  }
+  .ticker-track{
+    display:flex;white-space:nowrap;
+    animation:tick 45s linear infinite;
+    font-size:9px;letter-spacing:3px;color:var(--text-dim);gap:50px;
+  }
+  @keyframes tick{0%{transform:translateX(100vw);}100%{transform:translateX(-200%);}}
+  .ts{color:var(--green);margin:0 8px;}
+
+  /* ── PARTICLE SYSTEM ── */
+  .particle{
+    position:fixed;border-radius:50%;pointer-events:none;
+    background:var(--green);z-index:1;
+    animation:float linear infinite;
+  }
+  @keyframes float{
+    0%{transform:translateY(110vh) rotate(0deg);opacity:0;}
+    10%{opacity:0.6;}
+    90%{opacity:0.2;}
+    100%{transform:translateY(-10vh) rotate(720deg);opacity:0;}
+  }
+
+  /* ── HEX GRID BG ── */
+  .hex-grid{
+    position:fixed;inset:0;pointer-events:none;z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='52'%3E%3Cpolygon points='30,2 58,17 58,35 30,50 2,35 2,17' fill='none' stroke='%2300ff4108' stroke-width='1'/%3E%3C/svg%3E");
+    background-size:60px 52px;
+    animation:hexShift 20s linear infinite;
+  }
+  @keyframes hexShift{0%{background-position:0 0;}100%{background-position:60px 104px;}}
+
+  /* ── LIGHTNING ── */
+  #lightning{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:0;}
+  #lightning.flash{animation:lightningFlash 0.15s ease forwards;}
+  @keyframes lightningFlash{0%{opacity:0.15;}50%{opacity:0.05;}100%{opacity:0;}}
+
+  /* ── MAIN ── */
+  .main{
+    min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:110px 20px 60px;
+    position:relative;z-index:10;
+  }
+
+  /* ── PAGE HEADER ── */
+  .page-header{text-align:center;margin-bottom:32px;animation:fadeDown 0.8s ease both;}
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-25px);}to{opacity:1;transform:translateY(0);}}
+  .team-badge{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:9px;letter-spacing:5px;color:var(--text-muted);
+    margin-bottom:10px;
+    border:1px solid var(--border);padding:5px 16px;
+    background:rgba(0,255,65,0.03);
+  }
+  .team-badge .tbdot{width:5px;height:5px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);animation:pdot 1s infinite;}
+  .page-title{
+    font-family:'Orbitron',monospace;
+    font-size:clamp(22px,4.5vw,46px);
+    font-weight:900;letter-spacing:5px;
+    color:var(--green);
+    text-shadow:0 0 20px var(--green),0 0 40px var(--green-dim),0 0 80px rgba(0,255,65,0.15);
+    line-height:1.1;
+    animation:glitch 7s ease-in-out infinite;
+  }
+  @keyframes glitch{
+    0%,91%,100%{text-shadow:0 0 20px var(--green),0 0 40px var(--green-dim);clip-path:none;transform:none;}
+    92%{clip-path:polygon(0 15%,100% 15%,100% 35%,0 35%);transform:translateX(-4px);text-shadow:3px 0 var(--cyan),-3px 0 var(--red);}
+    93%{clip-path:polygon(0 55%,100% 55%,100% 75%,0 75%);transform:translateX(4px);}
+    94%{clip-path:none;transform:none;text-shadow:0 0 20px var(--green),0 0 40px var(--green-dim);}
+  }
+  .dev-name{
+    font-family:'Orbitron',monospace;font-size:11px;letter-spacing:6px;
+    color:var(--text-dim);margin-top:6px;
+    text-shadow:0 0 8px var(--green-dim);
+  }
+  .dev-name span{color:var(--green);text-shadow:0 0 10px var(--green);}
+  .page-subtitle{font-size:9px;letter-spacing:3px;color:var(--text-muted);margin-top:5px;}
+
+  /* ── AUTH CONTAINER ── */
+  .auth-container{width:100%;max-width:500px;animation:fadeUp 0.8s 0.25s ease both;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+
+  /* TABS */
+  .tab-switcher{display:flex;margin-bottom:-1px;position:relative;z-index:2;}
+  .tab-btn{
+    flex:1;padding:11px 16px;
+    background:transparent;border:1px solid var(--border);border-bottom:none;
+    color:var(--text-muted);font-family:'Share Tech Mono',monospace;
+    font-size:10px;letter-spacing:3px;cursor:pointer;
+    transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:7px;
+    position:relative;overflow:hidden;
+  }
+  .tab-btn::before{content:'';position:absolute;inset:0;background:var(--green-glow);opacity:0;transition:opacity 0.3s;}
+  .tab-btn:hover::before,.tab-btn.active::before{opacity:1;}
+  .tab-btn.active{background:var(--green-dark);border-color:var(--green);color:var(--green);text-shadow:0 0 10px var(--green);box-shadow:0 0 15px var(--green-glow);}
+  .tab-btn:first-child{border-right:none;}
+
+  /* PANEL */
+  .panel{
+    background:linear-gradient(135deg,var(--panel) 0%,#010c03 100%);
+    border:1px solid var(--border-bright);
+    box-shadow:0 0 40px rgba(0,255,65,0.05),0 0 80px rgba(0,255,65,0.02),inset 0 1px 0 rgba(0,255,65,0.1);
+    position:relative;overflow:hidden;
+  }
+  .panel::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--green),transparent);
+    animation:scanLine 3s ease-in-out infinite;
+  }
+  @keyframes scanLine{0%,100%{opacity:0.3;}50%{opacity:1;}}
+  .panel::after{content:'';position:absolute;bottom:0;right:0;width:18px;height:18px;border-bottom:2px solid var(--green);border-right:2px solid var(--green);opacity:0.5;}
+  .corner-tl{position:absolute;top:0;left:0;width:18px;height:18px;border-top:2px solid var(--green);border-left:2px solid var(--green);opacity:0.5;z-index:1;}
+  .corner-tr{position:absolute;top:0;right:0;width:18px;height:18px;border-top:2px solid var(--green);border-right:2px solid var(--green);opacity:0.5;z-index:1;}
+
+  /* SCAN LINE SWEEP */
+  .panel-scan{
+    position:absolute;top:-2px;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--green),transparent);
+    box-shadow:0 0 10px var(--green),0 0 20px var(--green);
+    animation:sweep 4s linear infinite;opacity:0.6;
+  }
+  @keyframes sweep{0%{top:-2px;}100%{top:100%;}}
+
+  .panel-header{padding:13px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-size:10px;letter-spacing:3px;color:var(--text-dim);display:flex;align-items:center;gap:8px;}
+  .panel-title .num{font-family:'VT323',monospace;font-size:20px;color:var(--green);line-height:1;}
+  .panel-badge{font-size:9px;letter-spacing:2px;color:var(--green);background:var(--green-dark);border:1px solid var(--border-bright);padding:3px 8px;box-shadow:0 0 8px var(--green-glow);animation:badgePulse 2s ease infinite;}
+  @keyframes badgePulse{0%,100%{box-shadow:0 0 8px var(--green-glow);}50%{box-shadow:0 0 16px var(--green-glow2);}}
+  .panel-body{padding:22px 20px;}
+
+  /* FORM */
+  .form-group{margin-bottom:16px;}
+  .form-label{font-size:9px;letter-spacing:3px;color:var(--text-muted);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+  .form-label .lnum{color:var(--green);font-family:'VT323',monospace;font-size:16px;}
+  .input-wrap{position:relative;}
+  .input-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text-dim);letter-spacing:1px;pointer-events:none;white-space:nowrap;}
+  .form-input{
+    width:100%;background:rgba(0,15,5,0.8);border:1px solid var(--border);
+    color:var(--green);font-family:'Share Tech Mono',monospace;font-size:13px;
+    padding:12px 12px 12px 62px;outline:none;transition:all 0.3s;
+    letter-spacing:1px;caret-color:var(--green);
+  }
+  .form-input::placeholder{color:var(--text-muted);}
+  .form-input:focus{border-color:var(--green);background:rgba(0,30,10,0.8);box-shadow:0 0 0 1px var(--border-bright),0 0 20px var(--green-glow),inset 0 0 10px rgba(0,255,65,0.03);}
+  .form-input:focus~.input-line{width:100%;}
+  .input-line{height:1px;background:linear-gradient(90deg,var(--green),var(--green-dim));width:0;transition:width 0.4s ease;margin-top:-1px;box-shadow:0 0 8px var(--green);}
+
+  /* STRENGTH */
+  .strength-bar{display:flex;gap:3px;margin-top:7px;opacity:0;transition:opacity 0.3s;}
+  .strength-bar.visible{opacity:1;}
+  .strength-seg{flex:1;height:3px;background:var(--green-dark);border:1px solid var(--border);transition:all 0.3s;}
+  .strength-seg.on{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .strength-seg.on.med{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+  .strength-seg.on.weak{background:var(--red);box-shadow:0 0 6px var(--red);}
+  .strength-text{font-size:9px;letter-spacing:2px;margin-top:4px;color:var(--text-muted);}
+
+  /* ROW */
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  /* DIVIDER */
+  .form-divider{display:flex;align-items:center;gap:10px;margin:4px 0 16px;font-size:9px;letter-spacing:3px;color:var(--text-muted);}
+  .form-divider::before,.form-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  /* CHECKBOX */
+  .form-check{display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;font-size:9px;letter-spacing:2px;color:var(--text-dim);}
+  .form-check input{display:none;}
+  .check-box{width:14px;height:14px;border:1px solid var(--border-bright);background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;}
+  .form-check input:checked+.check-box{background:var(--green-dark);border-color:var(--green);box-shadow:0 0 8px var(--green-glow);}
+  .form-check input:checked+.check-box::after{content:'✓';color:var(--green);font-size:10px;}
+
+  /* BUTTON */
+  .btn-submit{
+    width:100%;padding:14px;
+    background:var(--green-dark);border:1px solid var(--green);
+    color:var(--green);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+    letter-spacing:4px;cursor:pointer;transition:all 0.3s;
+    position:relative;overflow:hidden;text-transform:uppercase;margin-top:5px;
+  }
+  .btn-submit::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(0,255,65,0.12),transparent);transform:translateX(-100%);transition:transform 0.5s ease;}
+  .btn-submit:hover{background:rgba(0,255,65,0.15);box-shadow:0 0 25px var(--green-glow2),0 0 50px var(--green-glow),inset 0 0 20px rgba(0,255,65,0.05);text-shadow:0 0 12px var(--green);}
+  .btn-submit:hover::before{transform:translateX(100%);}
+  .btn-submit:active{transform:scale(0.99);}
+  .btn-submit.loading{color:transparent;pointer-events:none;}
+  .btn-submit.loading::after{content:'';position:absolute;top:50%;left:50%;width:16px;height:16px;border:2px solid var(--green-dark);border-top-color:var(--green);border-radius:50%;transform:translate(-50%,-50%);animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg);}}
+
+  /* ALERT */
+  .alert{padding:9px 13px;border-left:2px solid;margin-bottom:14px;font-size:9px;letter-spacing:2px;display:none;animation:aFadeIn 0.3s ease;}
+  @keyframes aFadeIn{from{opacity:0;transform:translateX(-5px);}to{opacity:1;}}
+  .alert.error{border-color:var(--red);color:var(--red);background:rgba(255,51,51,0.05);}
+  .alert.success{border-color:var(--green);color:var(--green);background:rgba(0,255,65,0.05);}
+  .alert.show{display:block;}
+
+  /* PANEL FOOTER */
+  .panel-footer{padding:11px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:2px;color:var(--text-muted);}
+  .footer-link{color:var(--text-dim);text-decoration:none;cursor:pointer;transition:color 0.2s;}
+  .footer-link:hover{color:var(--green);text-shadow:0 0 8px var(--green);}
+
+  /* FORM SECTIONS */
+  .form-section{display:none;}
+  .form-section.active{display:block;}
+
+  /* SUCCESS */
+  .success-overlay{display:none;text-align:center;padding:36px 20px;animation:aFadeIn 0.5s ease;}
+  .success-overlay.show{display:block;}
+  .success-icon{font-family:'VT323',monospace;font-size:60px;color:var(--green);text-shadow:0 0 20px var(--green);display:block;margin-bottom:10px;animation:pdot 1s ease infinite;}
+  .success-title{font-family:'Orbitron',monospace;font-size:15px;letter-spacing:4px;color:var(--green);text-shadow:0 0 10px var(--green);margin-bottom:8px;}
+  .success-msg{font-size:10px;letter-spacing:2px;color:var(--text-dim);}
+
+  /* STATS */
+  .stats-bar{
+    display:flex;justify-content:space-around;
+    margin-top:20px;padding:12px;
+    border:1px solid var(--border);background:rgba(0,10,2,0.6);
+    animation:fadeUp 1s 0.4s ease both;
+  }
+  .stat{text-align:center;}
+  .stat-val{font-family:'VT323',monospace;font-size:26px;color:var(--green);line-height:1;text-shadow:0 0 10px var(--green);}
+  .stat-label{font-size:7px;letter-spacing:3px;color:var(--text-muted);margin-top:3px;}
+  .stat-divider{width:1px;background:var(--border);}
+
+  /* ── FOOTER ── */
+  .site-footer{
+    position:relative;z-index:10;
+    border-top:1px solid var(--border-bright);
+    background:linear-gradient(180deg,rgba(1,14,4,0) 0%,rgba(1,14,4,0.98) 100%);
+    padding:28px 20px 50px;
+    text-align:center;
+    animation:fadeUp 1s 0.6s ease both;
+  }
+  .footer-team{
+    font-family:'Orbitron',monospace;font-size:14px;font-weight:900;
+    letter-spacing:5px;color:var(--green);
+    text-shadow:0 0 15px var(--green),0 0 30px var(--green-dim);
+    margin-bottom:6px;
+  }
+  .footer-dev{font-size:10px;letter-spacing:4px;color:var(--text-dim);margin-bottom:18px;}
+  .footer-dev span{color:var(--green);text-shadow:0 0 8px var(--green);}
+  .footer-socials{display:flex;justify-content:center;gap:14px;margin-bottom:16px;}
+  .footer-social-btn{
+    display:flex;align-items:center;gap:7px;
+    font-size:10px;letter-spacing:2px;
+    color:var(--text-dim);text-decoration:none;
+    padding:7px 16px;border:1px solid var(--border);
+    transition:all 0.3s;position:relative;overflow:hidden;
+  }
+  .footer-social-btn::before{content:'';position:absolute;inset:0;background:var(--green-glow);opacity:0;transition:opacity 0.3s;}
+  .footer-social-btn:hover::before{opacity:1;}
+  .footer-social-btn.tg:hover{color:#2AABEE;border-color:#2AABEE;box-shadow:0 0 15px rgba(42,171,238,0.3);}
+  .footer-social-btn.fb:hover{color:#1877F2;border-color:#1877F2;box-shadow:0 0 15px rgba(24,119,242,0.3);}
+  .footer-copy{font-size:8px;letter-spacing:3px;color:var(--text-muted);}
+
+  /* BOTTOM TICKER */
+  .bottom-bar{position:fixed;bottom:0;left:0;right:0;height:26px;background:var(--green-dark);border-top:1px solid var(--border-bright);display:flex;align-items:center;overflow:hidden;z-index:200;}
+  .bottom-ticker{display:flex;white-space:nowrap;animation:tick 32s linear infinite reverse;font-size:9px;letter-spacing:4px;color:var(--text-muted);gap:60px;}
+
+  /* CURSOR BLINK */
+  .cblink{display:inline-block;width:8px;height:14px;background:var(--green);vertical-align:middle;animation:blink 1s step-end infinite;margin-left:5px;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+  /* TYPING ANIMATION */
+  .typing{overflow:hidden;white-space:nowrap;border-right:2px solid var(--green);animation:typing 2s steps(20,end) forwards,blinkCaret 0.7s step-end infinite;}
+  @keyframes typing{from{width:0;}to{width:100%;}}
+  @keyframes blinkCaret{0%,100%{border-color:var(--green);}50%{border-color:transparent;}}
+
+  /* RADAR */
+  .radar-wrap{position:fixed;bottom:40px;right:20px;width:80px;height:80px;z-index:50;opacity:0.3;pointer-events:none;}
+  .radar-circle{position:absolute;inset:0;border:1px solid var(--green);border-radius:50%;}
+  .radar-circle:nth-child(2){inset:15px;}
+  .radar-circle:nth-child(3){inset:30px;}
+  .radar-line{position:absolute;top:50%;left:50%;width:50%;height:1px;background:linear-gradient(90deg,var(--green),transparent);transform-origin:left center;animation:radarSpin 3s linear infinite;}
+  @keyframes radarSpin{to{transform:rotate(360deg);}}
+  .radar-dot{position:absolute;width:4px;height:4px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);}
+  .radar-dot:nth-child(4){top:20%;left:60%;}
+  .radar-dot:nth-child(5){top:65%;left:25%;}
+  .radar-dot:nth-child(6){top:40%;left:70%;}
+
+  /* CORNER ALERT */
+  .corner-alert{
+    position:fixed;top:90px;right:10px;
+    width:180px;font-size:9px;letter-spacing:2px;
+    border:1px solid var(--border-bright);
+    background:rgba(0,10,2,0.95);
+    padding:10px 12px;z-index:150;
+    animation:alertSlide 1s ease both;
+  }
+  @keyframes alertSlide{from{opacity:0;transform:translateX(50px);}to{opacity:1;transform:translateX(0);}}
+  .ca-title{color:var(--green);font-size:9px;letter-spacing:3px;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+  .ca-item{color:var(--text-muted);margin:3px 0;font-size:8px;}
+  .ca-item .on{color:var(--green);}
+
+  /* NEON LINES */
+  .neon-line{
+    position:fixed;pointer-events:none;z-index:1;
+    background:linear-gradient(90deg,transparent,var(--green),transparent);
+    height:1px;opacity:0;
+    animation:neonPulse 8s ease-in-out infinite;
+  }
+  @keyframes neonPulse{0%,100%{opacity:0;}50%{opacity:0.15;}}
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="hex-grid"></div>
+<canvas id="lightning"></canvas>
+
+<!-- NEON LINES -->
+<div class="neon-line" style="top:30%;left:0;right:0;animation-delay:0s;"></div>
+<div class="neon-line" style="top:60%;left:0;right:0;animation-delay:4s;"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <span class="pulse-dot"></span>
+    TEAM<span style="color:var(--text-muted)">//</span>DANGEROUS
+  </div>
+  <div class="topbar-center">
+    <div class="si"><span class="sd"></span>ONLINE</div>
+    <div class="si"><span class="sd y"></span>AES-256</div>
+    <div class="si"><span class="sd"></span>SECURE</div>
+    <div class="si"><span class="sd r"></span>FIREWALL</div>
+  </div>
+  <div class="topbar-right">
+    <div class="social-links">
+      <a class="social-btn tg" href="https://t.me/TEAMDANGEROUS" target="_blank">✈ TELEGRAM</a>
+      <a class="social-btn fb" href="https://facebook.com/DarkCyberMind" target="_blank">⬛ FACEBOOK</a>
+    </div>
+    <div class="topbar-clock" id="clock">00:00:00</div>
+  </div>
+</div>
+
+<!-- TOP TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span>● TEAM DANGEROUS ONLINE</span><span class="ts">◆</span>
+    <span>DEVELOPED BY TUSHAR</span><span class="ts">◆</span>
+    <span>AES-256 ENCRYPTED</span><span class="ts">◆</span>
+    <span>FIREWALL ACTIVE</span><span class="ts">◆</span>
+    <span>SECURE TUNNEL ESTABLISHED</span><span class="ts">◆</span>
+    <span>API CONNECTED</span><span class="ts">◆</span>
+    <span>INTRUSION DETECTION ON</span><span class="ts">◆</span>
+    <span>JOIN t.me/TEAMDANGEROUS</span><span class="ts">◆</span>
+    <span>SSL/TLS v1.3 ACTIVE</span><span class="ts">◆</span>
+    <span>ZERO-TRUST PROTOCOL ENABLED</span>
+  </div>
+</div>
+
+
+
+<!-- RADAR -->
+<div class="radar-wrap">
+  <div class="radar-circle"></div>
+  <div class="radar-circle"></div>
+  <div class="radar-circle"></div>
+  <div class="radar-line"></div>
+  <div class="radar-dot"></div>
+  <div class="radar-dot"></div>
+  <div class="radar-dot"></div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="page-header">
+    <div class="team-badge"><span class="tbdot"></span> TEAM DANGEROUS <span class="tbdot"></span></div>
+    <div class="page-title">SECURE ACCESS<span class="cblink"></span></div>
+    <div class="dev-name">DEVELOPED BY <span>TUSHAR</span> // TEAM DANGEROUS</div>
+    <div class="page-subtitle">AUTHENTICATE TO CONTINUE // UNAUTHORIZED ACCESS PROHIBITED</div>
+  </div>
+
+  <div class="auth-container">
+    <div class="tab-switcher">
+      <button class="tab-btn active" onclick="switchTab('login')" id="tab-login">▶ LOGIN</button>
+      <button class="tab-btn" onclick="switchTab('register')" id="tab-register">+ REGISTER</button>
+    </div>
+
+    <div class="panel">
+      <div class="corner-tl"></div>
+      <div class="corner-tr"></div>
+      <div class="panel-scan"></div>
+
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="num" id="panel-num">01</span>
+          <span id="panel-label">USER AUTHENTICATION</span>
+        </div>
+        <div class="panel-badge" id="panel-badge">● SECURE</div>
+      </div>
+
+      <div class="panel-body">
+        <div class="alert" id="alert-msg"></div>
+
+        <!-- LOGIN -->
+        <div class="form-section active" id="section-login">
+          <div class="form-group">
+            <div class="form-label"><span class="lnum">01</span> USERNAME / EMAIL / PHONE</div>
+            <div class="input-wrap">
+              <span class="input-prefix">ID ⟹</span>
+              <input type="text" class="form-input" id="login-id" placeholder="username, email or phone" autocomplete="off">
+              <div class="input-line"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label"><span class="lnum">02</span> ACCESS KEY / PASSWORD</div>
+            <div class="input-wrap">
+              <span class="input-prefix">KEY ⟹</span>
+              <input type="password" class="form-input" id="login-pass" placeholder="Enter password" autocomplete="off">
+              <div class="input-line"></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <label class="form-check" style="margin-bottom:0;">
+              <input type="checkbox" id="remember-me">
+              <span class="check-box"></span>
+              REMEMBER TERMINAL
+            </label>
+            <a class="footer-link" style="font-size:9px;letter-spacing:2px;">FORGOT KEY?</a>
+          </div>
+          <div class="form-divider">INITIATE SEQUENCE</div>
+          <button class="btn-submit" onclick="doLogin(this)">⟹ AUTHENTICATE ACCESS</button>
+        </div>
+
+        <!-- REGISTER -->
+        <div class="form-section" id="section-register">
+          <div class="form-row">
+            <div class="form-group">
+              <div class="form-label"><span class="lnum">01</span> FULL NAME</div>
+              <div class="input-wrap">
+                <span class="input-prefix">USR ⟹</span>
+                <input type="text" class="form-input" id="reg-name" placeholder="Full name" autocomplete="off">
+                <div class="input-line"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="form-label"><span class="lnum">02</span> USERNAME</div>
+              <div class="input-wrap">
+                <span class="input-prefix">ID ⟹</span>
+                <input type="text" class="form-input" id="reg-user" placeholder="Username" autocomplete="off">
+                <div class="input-line"></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label"><span class="lnum">03</span> EMAIL ADDRESS</div>
+            <div class="input-wrap">
+              <span class="input-prefix">@ ⟹</span>
+              <input type="email" class="form-input" id="reg-email" placeholder="Enter email address" autocomplete="off">
+              <div class="input-line"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label"><span class="lnum">04</span> PHONE NUMBER</div>
+            <div class="input-wrap">
+              <span class="input-prefix">☎ ⟹</span>
+              <input type="tel" class="form-input" id="reg-phone" placeholder="+880XXXXXXXXXX" autocomplete="off">
+              <div class="input-line"></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <div class="form-label"><span class="lnum">05</span> PASSWORD</div>
+              <div class="input-wrap">
+                <span class="input-prefix">KEY ⟹</span>
+                <input type="password" class="form-input" id="reg-pass" placeholder="Create password" autocomplete="off" oninput="checkStrength(this.value)">
+                <div class="input-line"></div>
+              </div>
+              <div class="strength-bar" id="strength-bar">
+                <div class="strength-seg" id="seg1"></div>
+                <div class="strength-seg" id="seg2"></div>
+                <div class="strength-seg" id="seg3"></div>
+                <div class="strength-seg" id="seg4"></div>
+              </div>
+              <div class="strength-text" id="strength-text"></div>
+            </div>
+            <div class="form-group">
+              <div class="form-label"><span class="lnum">06</span> CONFIRM KEY</div>
+              <div class="input-wrap">
+                <span class="input-prefix">KEY ⟹</span>
+                <input type="password" class="form-input" id="reg-pass2" placeholder="Confirm password" autocomplete="off">
+                <div class="input-line"></div>
+              </div>
+            </div>
+          </div>
+          <label class="form-check">
+            <input type="checkbox" id="agree-terms">
+            <span class="check-box"></span>
+            I AGREE TO TERMS & TEAM DANGEROUS PROTOCOLS
+          </label>
+          <div class="form-divider">INITIALIZE ACCOUNT</div>
+          <button class="btn-submit" onclick="doRegister(this)">⟹ CREATE ACCOUNT</button>
+        </div>
+
+        <!-- SUCCESS -->
+        <div class="success-overlay" id="success-overlay">
+          <span class="success-icon">✓</span>
+          <div class="success-title" id="success-title">ACCESS GRANTED</div>
+          <div class="success-msg" id="success-msg">Authentication successful.</div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <span>SESSION: <span style="color:var(--green)" id="session-id">INIT</span></span>
+        <a class="footer-link" onclick="switchTab(currentTab==='login'?'register':'login')" id="footer-link">NEW USER? REGISTER →</a>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-val" id="stat-users">0</div><div class="stat-label">REGISTERED</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-val">99%</div><div class="stat-label">UPTIME</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-val">&lt;2s</div><div class="stat-label">RESPONSE</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-val">256</div><div class="stat-label">BIT ENC</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SITE FOOTER -->
+<div class="site-footer">
+  <div class="footer-team">◈ TEAM DANGEROUS ◈</div>
+  <div class="footer-dev">DEVELOPED BY <span>TUSHAR</span> // ALL RIGHTS RESERVED</div>
+  <div class="footer-socials">
+    <a class="footer-social-btn tg" href="https://t.me/TEAMDANGEROUS" target="_blank">
+      ✈ TELEGRAM // @TEAMDANGEROUS
+    </a>
+    <a class="footer-social-btn fb" href="https://facebook.com/DarkCyberMind" target="_blank">
+      ⬛ FACEBOOK // DARKCYBERMIND
+    </a>
+  </div>
+  <div class="footer-copy">© 2025 TEAM DANGEROUS // TUSHAR // UNAUTHORIZED ACCESS PROHIBITED</div>
+</div>
+
+<!-- BOTTOM TICKER -->
+<div class="bottom-bar">
+  <div class="bottom-ticker">
+    <span>◉ TEAM DANGEROUS</span><span>◆</span>
+    <span>DEVELOPED BY TUSHAR</span><span>◆</span>
+    <span>t.me/TEAMDANGEROUS</span><span>◆</span>
+    <span>SECURE TUNNEL ACTIVE</span><span>◆</span>
+    <span>AES-256 ENCRYPTION</span><span>◆</span>
+    <span>FIREWALL ENABLED</span><span>◆</span>
+    <span>SSL/TLS v1.3</span><span>◆</span>
+    <span>ZERO-TRUST PROTOCOL</span>
+  </div>
+</div>
+
+<script>
+// ── USER DB ──────────────────────────────────────────────────────────────────
+function getUsers(){return JSON.parse(localStorage.getItem('td_users')||'[]');}
+function saveUsers(u){localStorage.setItem('td_users',JSON.stringify(u));}
+
+// ── SESSION ID ────────────────────────────────────────────────────────────────
+document.getElementById('session-id').textContent=Math.random().toString(36).substr(2,8).toUpperCase();
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
+}
+updateClock();setInterval(updateClock,1000);
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function updateStats(){
+  const c=getUsers().length;
+  document.getElementById('stat-users').textContent=c;
+  const caUsers=document.getElementById('ca-users');
+  if(caUsers) caUsers.textContent=c;
+}
+updateStats();
+
+// ── MATRIX RAIN ───────────────────────────────────────────────────────────────
+const mc=document.getElementById('matrix-canvas');
+const mctx=mc.getContext('2d');
+function resizeCanvas(){mc.width=window.innerWidth;mc.height=window.innerHeight;}
+resizeCanvas();window.addEventListener('resize',resizeCanvas);
+const cols=()=>Math.floor(mc.width/16);
+let drops=[];
+function initDrops(){drops=Array(cols()).fill(1);}
+initDrops();window.addEventListener('resize',initDrops);
+const chars='01アイウエオカキクケコサシスセソタチツテトBDDNGR';
+function drawMatrix(){
+  mctx.fillStyle='rgba(0,0,0,0.05)';
+  mctx.fillRect(0,0,mc.width,mc.height);
+  mctx.fillStyle='#00ff41';mctx.font='13px Share Tech Mono';
+  drops.forEach((y,x)=>{
+    mctx.fillText(chars[Math.floor(Math.random()*chars.length)],x*16,y*16);
+    if(y*16>mc.height&&Math.random()>0.975)drops[x]=0;
+    drops[x]++;
+  });
+}
+setInterval(drawMatrix,55);
+
+// ── PARTICLES ─────────────────────────────────────────────────────────────────
+function createParticles(){
+  for(let i=0;i<18;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const size=Math.random()*2+1;
+    p.style.cssText=`
+      width:${size}px;height:${size}px;
+      left:${Math.random()*100}vw;
+      animation-duration:${10+Math.random()*20}s;
+      animation-delay:${Math.random()*15}s;
+      opacity:${0.2+Math.random()*0.5};
+    `;
+    document.body.appendChild(p);
+  }
+}
+createParticles();
+
+// ── LIGHTNING ─────────────────────────────────────────────────────────────────
+const lc=document.getElementById('lightning');
+const lctx=lc.getContext('2d');
+function resizeLightning(){lc.width=window.innerWidth;lc.height=window.innerHeight;}
+resizeLightning();window.addEventListener('resize',resizeLightning);
+function drawLightning(x1,y1,x2,y2,depth){
+  if(depth===0)return;
+  const mx=(x1+x2)/2+(Math.random()-0.5)*(Math.abs(x2-x1)+Math.abs(y2-y1))*0.3;
+  const my=(y1+y2)/2+(Math.random()-0.5)*(Math.abs(x2-x1)+Math.abs(y2-y1))*0.3;
+  lctx.beginPath();lctx.moveTo(x1,y1);lctx.lineTo(mx,my);
+  lctx.strokeStyle=`rgba(0,255,65,${0.1*depth})`;lctx.lineWidth=depth*0.5;
+  lctx.stroke();
+  drawLightning(x1,y1,mx,my,depth-1);
+  drawLightning(mx,my,x2,y2,depth-1);
+}
+function triggerLightning(){
+  lctx.clearRect(0,0,lc.width,lc.height);
+  const x=Math.random()*lc.width;
+  drawLightning(x,0,x+(Math.random()-0.5)*200,lc.height,5);
+  lc.classList.add('flash');
+  setTimeout(()=>{lc.classList.remove('flash');lctx.clearRect(0,0,lc.width,lc.height);},200);
+}
+setInterval(()=>{if(Math.random()>0.6)triggerLightning();},6000);
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+let currentTab = 'login';
+
+function switchTab(tab) {
+  currentTab = tab;
+  const isL = tab === 'login';
+
+  // ১. ইউআই (UI) এলিমেন্ট আপডেট করা
+  document.getElementById('tab-login').classList.toggle('active', isL);
+  document.getElementById('tab-register').classList.toggle('active', !isL);
+
+  ['login', 'register'].forEach(t => {
+    const s = document.getElementById('section-' + t);
+    s.classList.toggle('active', t === tab);
+    s.style.display = '';
+  });
+
+  // ২. প্যানেল টেক্সট এবং লেবেল আপডেট করা
+  document.getElementById('success-overlay').classList.remove('show');
+  document.getElementById('panel-num').textContent = isL ? '01' : '02';
+  document.getElementById('panel-label').textContent = isL ? 'USER AUTHENTICATION' : 'NEW USER REGISTRATION';
+  document.getElementById('panel-badge').textContent = isL ? '● SECURE' : '● REGISTER';
+  document.getElementById('footer-link').textContent = isL ? 'NEW USER? REGISTER →' : '← BACK TO LOGIN';
+  
+  clearAlert();
+}
+
+// ৪. পেজ লোড হওয়ার সময় ইউআরএল চেক করে সঠিক ট্যাব দেখানো
+window.addEventListener('load', () => {
+  const path = window.location.pathname;
+  if (path === '/registration') {
+    switchTab('register');
+  } else {
+    switchTab('login');
+  }
+});
+
+// ৫. ব্রাউজারের ব্যাক বাটন চাপলে যাতে ট্যাব অটো চেঞ্জ হয়
+window.onpopstate = function(event) {
+  if (event.state && event.state.tab) {
+    switchTab(event.state.tab);
+  }
+};
+// ── ALERT ─────────────────────────────────────────────────────────────────────
+function showAlert(msg,type='error'){
+  const el=document.getElementById('alert-msg');
+  el.textContent='⚠ '+msg;el.className='alert '+type+' show';
+}
+function clearAlert(){document.getElementById('alert-msg').className='alert';}
+
+// ── STRENGTH ──────────────────────────────────────────────────────────────────
+function checkStrength(v){
+  const bar=document.getElementById('strength-bar');
+  const txt=document.getElementById('strength-text');
+  bar.classList.toggle('visible',v.length>0);
+  let s=0;
+  if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
+  [1,2,3,4].forEach(i=>{
+    const seg=document.getElementById('seg'+i);
+    seg.className='strength-seg'+(i<=s?' on '+(s<=1?'weak':s<=2?'med':''):'');
+  });
+  txt.textContent=v.length>0?'▸ STRENGTH: '+(['','WEAK','MEDIUM','STRONG','MAX SECURE'][s]||'MAX SECURE'):'';
+}
+
+// ── NORMALIZE IDENTIFIER ──────────────────────────────────────────────────────
+function normalizePhone(p){return p.replace(/[\s\-\(\)]/g,'');}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+// ── LOGIN LOGIC (Token Generation & Storage) ─────────────────────
+// ── LOGIN LOGIC (Token Generation & Storage) ─────────────────────
+async function doLogin(btn) {
+  clearAlert();
+  const username = document.getElementById('login-id').value.trim();
+  const password = document.getElementById('login-pass').value;
+
+  if (!username || !password) {
+    showAlert('ALL FIELDS REQUIRED');
+    return;
+  }
+
+  btn.classList.add('loading');
+
+  try {
+    const response = await fetch('https://login-server-team-dangerous.vercel.app/api/login/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+    btn.classList.remove('loading');
+
+    if (response.ok) {
+      // ✅ Access token + Refresh token দুটোই save করা
+      localStorage.setItem('access_token', data.access);
+      localStorage.setItem('refresh_token', data.refresh);
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('username', data.username || username);
+
+      // সাকসেস UI
+      document.getElementById('section-login').style.display = 'none';
+      document.getElementById('success-title').textContent = 'ACCESS GRANTED';
+      document.getElementById('success-msg').textContent =
+        'WELCOME, ' + (data.username || username).toUpperCase() + ' // TOKEN ACTIVATED';
+      document.getElementById('success-overlay').classList.add('show');
+
+      triggerLightning();
+
+      // ৩ সেকেন্ড পর index.html এ যাবে
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 3000);
+
+    } else {
+      showAlert(data.error || 'INVALID ACCESS KEY');
+    }
+
+  } catch (error) {
+    btn.classList.remove('loading');
+    showAlert('SERVER OFFLINE // CHECK CONNECTION');
+  }
+}
+
+// ── REGISTER ──────────────────────────────────────────────────────────────────
+// ── REGISTER LOGIC (Backend Connected) ──────────────────────────────────
+async function doRegister(btn) {
+  clearAlert();
+  
+  // ইনপুট ফিল্ড থেকে ভ্যালু সংগ্রহ
+  const name = document.getElementById('reg-name').value.trim();
+  const user = document.getElementById('reg-user').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const passConfirm = document.getElementById('reg-pass2').value;
+  const agree = document.getElementById('agree-terms').checked;
+
+  // প্রাথমিক ভ্যালিডেশন
+  if(!name || !user || !email || !pass) { 
+    showAlert('ALL FIELDS REQUIRED'); 
+    return; 
+  }
+  if(pass !== passConfirm) {
+    showAlert('PASSWORDS DO NOT MATCH');
+    return;
+  }
+  if(!agree) { 
+    showAlert('MUST AGREE TO PROTOCOLS'); 
+    return; 
+  }
+
+  btn.classList.add('loading'); // বাটন লোডিং স্টেট চালু
+
+  try {
+    const response = await fetch('https://login-server-team-dangerous.vercel.app/api/register/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        full_name: name, 
+        username: user, 
+        email: email, 
+        password: pass 
+      })
+    });
+
+    const data = await response.json();
+    btn.classList.remove('loading');
+
+    if (response.ok) {
+      // রেজিস্ট্রেশন সফল হলে UI আপডেট
+      document.getElementById('section-register').style.display = 'none';
+      document.getElementById('success-title').textContent = 'ACCOUNT CREATED';
+      document.getElementById('success-msg').textContent = (data.msg || 'REGISTRATION SUCCESSFUL') + ' // REDIRECTING TO LOGIN...';
+      document.getElementById('success-overlay').classList.add('show');
+      
+      triggerLightning(); // আপনার থিম অনুযায়ী ইফেক্ট
+
+      // ৩ সেকেন্ড পর অটোমেটিক লগইন ট্যাবে নিয়ে যাবে
+      setTimeout(() => {
+        switchTab('login');
+      }, 3000);
+    } else {
+      // সার্ভার থেকে আসা নির্দিষ্ট এরর মেসেজ দেখানো
+      showAlert(data.error || 'REGISTRATION FAILED');
+    }
+  } catch (error) {
+    btn.classList.remove('loading');
+    showAlert('CONNECTION ERROR // SERVER UNREACHABLE');
+  }
+}
+// ── ENTER KEY ─────────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    if(currentTab==='login')doLogin(document.querySelector('#section-login .btn-submit'));
+    else doRegister(document.querySelector('#section-register .btn-submit'));
+  }
+});
+</script>
+</body>
+</html>
