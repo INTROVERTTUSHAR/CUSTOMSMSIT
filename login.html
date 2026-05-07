@@ -24,7 +24,7 @@
     --yellow: #ffff00;
     --cyan: #00ffff;
     --orange: #ff8800;
-  }
+  } 
   *{margin:0;padding:0;box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   body{
@@ -852,15 +852,14 @@ async function doLogin(btn) {
 async function doRegister(btn) {
   clearAlert();
   
-  // ইনপুট ফিল্ড থেকে ভ্যালু সংগ্রহ
   const name = document.getElementById('reg-name').value.trim();
   const user = document.getElementById('reg-user').value.trim();
   const email = document.getElementById('reg-email').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
   const pass = document.getElementById('reg-pass').value;
   const passConfirm = document.getElementById('reg-pass2').value;
   const agree = document.getElementById('agree-terms').checked;
 
-  // প্রাথমিক ভ্যালিডেশন
   if(!name || !user || !email || !pass) { 
     showAlert('ALL FIELDS REQUIRED'); 
     return; 
@@ -874,7 +873,7 @@ async function doRegister(btn) {
     return; 
   }
 
-  btn.classList.add('loading'); // বাটন লোডিং স্টেট চালু
+  btn.classList.add('loading');
 
   try {
     const response = await fetch('https://login-server-i35w.onrender.com/api/register/', {
@@ -883,14 +882,14 @@ async function doRegister(btn) {
       body: JSON.stringify({ 
         full_name: name, 
         username: user, 
-        email: email, 
+        email: email,
+        phone: phone,
         password: pass 
       })
     });
 
     const data = await response.json();
     btn.classList.remove('loading');
-
     if (response.ok) {
       // রেজিস্ট্রেশন সফল হলে UI আপডেট
       document.getElementById('section-register').style.display = 'none';
