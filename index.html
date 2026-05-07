@@ -22,7 +22,7 @@
   --mono:'Share Tech Mono',monospace;
   --orb:'Orbitron',monospace;
   --raj:'Rajdhani',sans-serif;
-}
+} 
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--g);font-family:var(--mono);min-height:100vh;overflow-x:hidden;cursor:default}
 
@@ -783,17 +783,20 @@ msgIn.addEventListener('input',()=>{
   if(l>400){f.style.background='var(--red)';f.style.boxShadow='0 0 7px var(--red)'}
   else if(l>300){f.style.background='var(--yel)';f.style.boxShadow='0 0 7px var(--yel)'}
   else{f.style.background='var(--cyn)';f.style.boxShadow='0 0 7px var(--cyn)'}
-  upConf();
+ upConf();
 });
 numIn.addEventListener('input',upConf);
-
 function upConf(){
   const n=numIn.value.trim(),m=msgIn.value.trim(),box=document.getElementById('conf');
+  if(!box) return;
   if(n&&m){
     box.classList.add('show');
-    document.getElementById('cnum').textContent=n;
-    document.getElementById('cmsg').textContent=m.length>72?m.slice(0,72)+'…':m;
-    document.getElementById('cts').textContent=new Date().toISOString();
+    const cnum=document.getElementById('cnum');
+    const cmsg=document.getElementById('cmsg');
+    const cts=document.getElementById('cts');
+    if(cnum) cnum.textContent=n;
+    if(cmsg) cmsg.textContent=m.length>72?m.slice(0,72)+'…':m;
+    if(cts) cts.textContent=new Date().toISOString();
   }else box.classList.remove('show');
 }
 
