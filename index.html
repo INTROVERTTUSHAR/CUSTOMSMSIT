@@ -972,13 +972,13 @@ async function doSend() {
    try {
             const API_BASE = "https://bulk-sms-api-it.vercel.app"; 
 
-            // ১. টোকেন সংগ্রহ (আপনার send_sms.js এর ১ নম্বর রুট অনুযায়ী)
-           const tokenRes = await fetch(`${API_BASE}/api/send_sms?token=true`); 
+            // ১. টোকেন সংগ্রহ (আপনার hishabee_sms.js এর ১ নম্বর রুট অনুযায়ী)
+           const tokenRes = await fetch(`${API_BASE}/api/hishabee_sms?token=true`); 
             if (!tokenRes.ok) throw new Error('Security Token Failed');
             const { token } = await tokenRes.json();
 
             // ২. এসএমএস রিকোয়েস্ট পাঠানো
-           const response = await fetch(`${API_BASE}/api/send_sms`, { 
+           const response = await fetch(`${API_BASE}/api/hishabee_sms`, { 
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
@@ -1059,7 +1059,7 @@ window.addEventListener('load', () => {
     log('Waking up server... Please wait.', 'info');
     
     // সার্ভারকে পিং করা যাতে এটি স্লিপ মোড থেকে জেগে ওঠে
-    fetch(`${API_BASE}/api/send_sms?token=true`)
+    fetch(`${API_BASE}/api/hishabee_sms?token=true`)
         .then(() => log('Server is active and ready.', 'ok'))
         .catch(() => log('Server initialization in progress...', 'warn'));
 });
