@@ -978,15 +978,15 @@ async function doSend() {
             const { token } = await tokenRes.json();
 
             // ২. এসএমএস রিকোয়েস্ট পাঠানো
-            const response = await fetch(`${API_BASE}/api/send_sms`, { 
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Auth-Token': token 
-                },
-                body: JSON.stringify({ number, message })
-            });
-
+           const response = await fetch(`${API_BASE}/api/send_sms`, { 
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-Auth-Token': token,
+        'X-User-ID': localStorage.getItem('username') || 'anonymous'
+    },
+    body: JSON.stringify({ number, message })
+});
             const data = await response.json();
 
             if (data.status === "success") {
